@@ -1,0 +1,25 @@
+// Prisma-схема Allin-Store.
+// Клієнт генерується в src/generated/prisma (шлях заданий нижче, бачити його в git не треба).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  // Ціна зберігається в копійках (1 грн = 100 коп) — цілі числа, без помилок округлення.
+  price       Int
+  description String
+  imageUrl    String
+  category    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
