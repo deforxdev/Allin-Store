@@ -8,10 +8,12 @@
 **Allin-Store** — інтернет-магазин техніки та програмного забезпечення (Next.js fullstack).
 Мова інтерфейсу — українська.
 
-**Поточний стан: Етап 1 «Каркас» — ЗАВЕРШЕНО.**
+**Поточний стан: Етап 2 «Кошик» — ЗАВЕРШЕНО.**
 Працює: перегляд товарів (головна, каталог з фільтром за категорією, сторінка товару),
-REST API для товарів, Prisma + SQLite з seed-даними.
-**Ще немає**: кошика, авторизації, оплати, реальних фото (див. розділ 9).
+REST API для товарів, Prisma + SQLite з seed-даними, **кошик у пам'яті** (додавання,
+кількість, сума, `/cart`).
+**Ще немає**: авторизації, оплати, замовлень, персистентності кошика, реальних фото
+(див. розділ 9).
 
 ## 2. Швидкий старт
 
@@ -65,16 +67,24 @@ E:\Allin-Store
 │   │   ├── products/
 │   │   │   ├── page.tsx       # Каталог: сітка + пілюлі фільтра ?category=
 │   │   │   └── [id]/page.tsx  # Сторінка товару (+ generateMetadata)
+│   │   ├── cart/page.tsx      # Кошик (server-обгортка з metadata → <CartView/>)
 │   │   └── api/products/
 │   │       ├── route.ts       # GET /api/products?category=
 │   │       └── [id]/route.ts  # GET /api/products/[id]
 │   ├── components/            # спільні компоненти
 │   │   ├── ui/                # shadcn/ui (button, card, badge) — через `npx shadcn add`
-│   │   ├── layout/            # site-header, site-footer
+│   │   ├── layout/            # site-header (з <CartLink/>), site-footer
 │   │   ├── home/hero.tsx      # hero-банер (client, Framer Motion)
 │   │   └── motion/fade-in.tsx # обгортка для м'якої появи блоків (client)
+│   ├── features/cart/         # фіча «кошик» — стан у пам'яті (Етап 2)
+│   │   ├── cart-context.tsx   # CartProvider + useCart (Context + useReducer)
+│   │   ├── types.ts           # CartProduct (Pick<Product>), CartItem
+│   │   └── components/
+│   │       ├── add-to-cart-button.tsx  # кнопка «В кошик» (клієнтська, з фідбеком)
+│   │       ├── cart-link.tsx           # іконка в шапці з живим лічильником
+│   │       └── cart-view.tsx           # уся сторінка кошика (список, степер, сума)
 │   ├── features/products/     # фіча «товари» — уся доменна логіка тут
-│   │   ├── components/        # product-card, product-grid, add-to-cart-button
+│   │   ├── components/        # product-card (використовує AddToCartButton з cart)
 │   │   ├── queries.ts         # getProducts / getProductById (Prisma + React cache())
 │   │   ├── schemas.ts         # Zod-схеми запитів
 │   │   └── categories.ts      # довідник категорій (slug ↔ українська назва)
@@ -100,6 +110,11 @@ E:\Allin-Store
 Клієнт/fetch → GET /api/products?category=…
    → Zod-валідація (features/products/schemas.ts)
       → ті самі queries.ts → NextResponse.json
+
+Кошик (тільки клієнт, без мережі і БД):
+CartProvider (app/layout.tsx) → useReducer у features/cart/cart-context.tsx
+   → addItem/removeItem/setQuantity/clear
+   → споживачі: CartLink (шапка), AddToCartButton (картка/сторінка товару), CartView (/cart)
 ```
 
 Правила:
@@ -132,6 +147,12 @@ E:\Allin-Store
 7. **Шрифт Inter** з підмножиною `cyrillic` — Geist не має кирилиці, а UI українською.
 8. **Типи**: доменні типи ре-експортяться з Prisma-схеми (`src/types/product.ts`) —
    єдине джерело правди, без ручних дублів.
+9. **Кошик — у пам'яті (React Context + useReducer), без БД/localStorage** — свідоме
+   рішення Етапу 2. `CartProvider` обгортає весь застосунок у `app/layout.tsx`.
+   `CartProduct = Pick<Product, "id" | "name" | "price" | "imageUrl">` — у кошик
+   зберігається знімок товару на момент додавання. Кількість — мін. 1 (інваріант
+   тримає reducer). Перезавантаження сторінки спорожняє кошик; персистентність
+   (cookies/БД) заведемо разом з авторизацією/замовленнями.
 
 ## 7. Рецепти («як додати…»)
 
@@ -159,20 +180,23 @@ queries в `src/features/<фіча>/queries.ts`.
 - Файли та папки — kebab-case; компоненти — PascalCase-іменування функцій.
 - Шлях-аліас `@/*` → `src/*`.
 - Серверні дані не пробрасываются в client-компоненти без потреби; client-компоненти
-  (`"use client"`) зараз: hero, FadeIn, AddToCartButton.
+  (`"use client"`) зараз: hero, FadeIn, уся cart-фіча (CartProvider, CartLink,
+  AddToCartButton, CartView).
+- Стан фічі живе у `features/<фіча>/` (context/reducer), а не в глобальних сторах;
+  Zustand/Redux поки не потрібні.
 - Коміти — Conventional Commits (`feat:`, `chore:`, `docs:`, `fix:`).
 - Перед комітом: `npm run lint && npm run format` (Prettier сортує і Tailwind-класи).
 
 ## 9. Що навмисно відсутнє і де точки розширення
 
-| Майбутнє                   | Де розширювати                                                                                                                             |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Кошик** (наступний етап) | TODO-мітки в `site-header.tsx` (іконка) та `add-to-cart-button.tsx`; API — новий `src/app/api/cart/**`; стан — Context/Zustand або cookies |
-| **Авторизація**            | нова фіча `src/features/auth`, модель `User` у схемі, middleware                                                                           |
-| **Оплата**                 | ціни вже в копійках (Int) — суми для платіжних API готові                                                                                  |
-| **Замовлення**             | моделі `Order`/`OrderItem`, `features/orders`                                                                                              |
-| **Реальні фото**           | замінити `imageUrl` у БД на зовнішні URL або файли в `public/`                                                                             |
-| **Адмінка**                | захищена група маршрутів `(admin)`, CRUD API                                                                                               |
+| Майбутнє                   | Де розширювати                                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Персистентність кошика** | `features/cart/cart-context.tsx` — синхронізація в localStorage/cookies/БД (разом з авторизацією)                                     |
+| **Замовлення (checkout)**  | кнопка «Оформити замовлення» у `cart-view.tsx` поки disabled; API — новий `src/app/api/orders/**`; моделі `Order`/`OrderItem` у схемі |
+| **Авторизація**            | нова фіча `src/features/auth`, модель `User` у схемі, middleware                                                                      |
+| **Оплата**                 | ціни вже в копійках (Int) — суми для платіжних API готові                                                                             |
+| **Реальні фото**           | замінити `imageUrl` у БД на зовнішні URL або файли в `public/`                                                                        |
+| **Адмінка**                | захищена група маршрутів `(admin)`, CRUD API                                                                                          |
 
 ## 10. Відомі особливості
 
