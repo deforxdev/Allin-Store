@@ -3,6 +3,7 @@ import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { CartProvider } from "@/features/cart/cart-context";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -27,9 +28,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="uk" className={`${inter.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <CartProvider>
+          <SiteHeader />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+        </CartProvider>
       </body>
     </html>
   );

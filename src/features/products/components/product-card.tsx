@@ -2,10 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
+import { AddToCartButton } from "@/features/cart/components/add-to-cart-button";
 import { categoryLabel } from "@/features/products/categories";
 import { formatPrice } from "@/lib/format-price";
 import type { Product } from "@/types/product";
-import { AddToCartButton } from "./add-to-cart-button";
 
 export function ProductCard({ product }: { product: Product }) {
   return (
@@ -38,7 +38,7 @@ export function ProductCard({ product }: { product: Product }) {
         <p className="mt-auto text-lg font-semibold">{formatPrice(product.price)}</p>
       </CardContent>
       <CardFooter className="p-3">
-        <AddToCartButton className="w-full" />
+        <AddToCartButton product={product} className="w-full" />
       </CardFooter>
     </Card>
   );

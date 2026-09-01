@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CartLink } from "@/features/cart/components/cart-link";
 
 const NAV_LINKS = [
   { href: "/", label: "Головна" },
@@ -20,12 +20,7 @@ export function SiteHeader() {
               <Link href={link.href}>{link.label}</Link>
             </Button>
           ))}
-          {/* TODO(cart): на етапі кошика тут з'явиться лічильник товарів і посилання на кошик. */}
-          <Button asChild variant="ghost" size="icon" title="Кошик — незабаром" aria-label="Кошик">
-            <Link href="/">
-              <ShoppingCart aria-hidden />
-            </Link>
-          </Button>
+          <CartLink />
         </nav>
       </div>
     </header>

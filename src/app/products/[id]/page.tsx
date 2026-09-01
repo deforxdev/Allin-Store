@@ -6,8 +6,8 @@ import { ArrowLeft } from "lucide-react";
 import { FadeIn } from "@/components/motion/fade-in";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AddToCartButton } from "@/features/cart/components/add-to-cart-button";
 import { categoryLabel } from "@/features/products/categories";
-import { AddToCartButton } from "@/features/products/components/add-to-cart-button";
 import { getProductById } from "@/features/products/queries";
 import { formatPrice } from "@/lib/format-price";
 
@@ -65,7 +65,7 @@ export default async function ProductPage(props: PageProps<"/products/[id]">) {
           <p className="mt-6 leading-relaxed text-muted-foreground">{product.description}</p>
 
           <div className="mt-8">
-            <AddToCartButton size="lg" className="h-11 px-6" />
+            <AddToCartButton product={product} size="lg" className="h-11 px-6" />
           </div>
 
           <ul className="mt-8 space-y-2 border-t pt-6 text-sm text-muted-foreground">
